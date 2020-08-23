@@ -8,6 +8,7 @@ import net.draycia.carbon.channels.contexts.impl.mcMMOContext;
 import net.draycia.carbon.listeners.*;
 import net.draycia.carbon.managers.*;
 import net.draycia.carbon.messaging.MessageManager;
+import net.draycia.carbon.storage.ChatUser;
 import net.draycia.carbon.storage.UserService;
 import net.draycia.carbon.storage.impl.JSONUserService;
 import net.draycia.carbon.storage.impl.MySQLUserService;

@@ -85,13 +85,7 @@ public class CarbonChatUser implements ChatUser, ForwardingAudience {
         final String newNickname = nickname;
         this.nickname = newNickname;
 
-        if (isOnline()) {
-            this.asPlayer().setDisplayName(newNickname);
-
-            if (carbonChat.getConfig().getBoolean("nicknames-set-tab-name")) {
-                this.asPlayer().setPlayerListName(newNickname);
-            }
-        }
+        updateUserNickname();
 
         if (!fromRemote) {
             if (nickname == null) {
@@ -100,6 +94,19 @@ public class CarbonChatUser implements ChatUser, ForwardingAudience {
                 carbonChat.getMessageManager().sendMessage("nickname", this.getUUID(), (byteArray) -> {
                     byteArray.writeUTF(newNickname);
                 });
+            }
+        }
+    }
+
+    @Override
+    public void updateUserNickname() {
+        if (isOnline()) {
+            if (getNickname() != null) {
+                asPlayer().setDisplayName(getNickname());
+
+                if (carbonChat.getConfig().getBoolean("nicknames-set-tab-name")) {
+                    asPlayer().setPlayerListName(getNickname());
+                }
             }
         }
     }

@@ -1,7 +1,9 @@
 package net.draycia.carbon.listeners;
 
 import net.draycia.carbon.CarbonChat;
+import net.draycia.carbon.channels.ChannelUser;
 import net.draycia.carbon.channels.ChatChannel;
+import net.draycia.carbon.channels.impls.ChannelUserWrapper;
 import net.draycia.carbon.storage.ChatUser;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -54,16 +56,17 @@ public class BukkitChatListener implements Listener {
             return;
         }
 
-        final Collection<ChatUser> recipients;
+        final Iterable<? extends ChannelUser> recipients;
 
         if (selectedChannel.honorsRecipientList()) {
             recipients = new HashSet<>();
 
             for (Player recipient : event.getRecipients()) {
-                recipients.add(carbonChat.getUserService().wrap(recipient));
+                ((HashSet<ChannelUserWrapper>)recipients)
+                        .add(new ChannelUserWrapper(carbonChat.getUserService().wrap(recipient), false));
             }
         } else {
-            recipients = (List<ChatUser>)selectedChannel.audiences();
+            recipients = selectedChannel.audiences();
         }
 
         event.getRecipients().clear();

@@ -21,6 +21,7 @@ public interface ChatUser extends Audience {
     default void setNickname(String nickname) {
         this.setNickname(nickname, false);
     }
+    void updateUserNickname();
 
     ChatChannel getSelectedChannel();
     void setSelectedChannel(ChatChannel channel, boolean fromRemote);

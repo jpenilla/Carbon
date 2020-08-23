@@ -2,6 +2,7 @@ package net.draycia.carbon.channels.impls;
 
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.draycia.carbon.CarbonChat;
+import net.draycia.carbon.channels.ChannelUser;
 import net.draycia.carbon.channels.ChatChannel;
 import net.draycia.carbon.events.ChatComponentEvent;
 import net.draycia.carbon.events.ChatFormatEvent;
@@ -41,6 +42,11 @@ public class CarbonChatChannel extends ChatChannel {
     }
 
     @Override
+    public ConfigurationSection getConfig() {
+        return config;
+    }
+
+    @Override
     public boolean testContext(ChatUser sender, ChatUser target) {
         return carbonChat.getContextManager().testContext(sender, target, this);
     }
@@ -51,30 +57,18 @@ public class CarbonChatChannel extends ChatChannel {
     }
 
     @Override
-    public @NotNull List<ChatUser> audiences() {
-        List<ChatUser> audience = new ArrayList<>();
+    public @NotNull List<ChannelUser> audiences() {
+        List<ChannelUser> audience = new ArrayList<>();
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             ChatUser playerUser = carbonChat.getUserService().wrap(player);
 
             if (canPlayerSee(playerUser, true)) {
-                audience.add(playerUser);
+                audience.add(new ChannelUserWrapper(playerUser, isUserSpying(playerUser)));
             }
         }
 
         return audience;
-    }
-
-    private void updateUserNickname(ChatUser user) {
-        if (user.isOnline()) {
-            if (user.getNickname() != null) {
-                user.asPlayer().setDisplayName(user.getNickname());
-
-                if (carbonChat.getConfig().getBoolean("nicknames-set-tab-name")) {
-                    user.asPlayer().setPlayerListName(user.getNickname());
-                }
-            }
-        }
     }
 
     private TextColor getColor(ChatUser user) {
@@ -87,8 +81,8 @@ public class CarbonChatChannel extends ChatChannel {
         }
     }
 
-    public Component sendMessage(ChatUser user, Collection<ChatUser> recipients, String message, boolean fromRemote) {
-        updateUserNickname(user);
+    public Component sendMessage(ChatUser user, Iterable<? extends ChatUser> recipients, String message, boolean fromRemote) {
+        user.updateUserNickname();
 
         // Get player's formatting
         String messageFormat = getFormat(user);
@@ -269,6 +263,14 @@ public class CarbonChatChannel extends ChatChannel {
         return false;
     }
 
+    private boolean isUserSpying(ChatUser target) {
+        if (!canPlayerSee(target, false)) {
+            return target.getChannelSettings(this).isSpying();
+        }
+
+        return false;
+    }
+
     @Override
     public void sendComponent(ChatUser player, Component component) {
         for (ChatUser user : audiences()) {
@@ -376,40 +378,6 @@ public class CarbonChatChannel extends ChatChannel {
         return NamedTextColor.WHITE;
     }
 
-    private String getDefaultFormatName() {
-        return getString("default-group");
-    }
-
-    @Override
-    public Boolean isDefault() {
-        return getBoolean("default");
-    }
-
-    @Override
-    public Boolean isIgnorable() {
-        return getBoolean("ignorable");
-    }
-
-    @Override
-    public Boolean shouldBungee() {
-        return getBoolean("should-bungee");
-    }
-
-    @Override
-    public Boolean honorsRecipientList() {
-        return getBoolean("honors-recipient-list");
-    }
-
-    @Override
-    public Boolean permissionGroupMatching() {
-        return getBoolean("permission-group-matching");
-    }
-
-    @Override
-    public List<String> getGroupOverrides() {
-        return getStringList("group-overrides");
-    }
-
     @Override
     public String getName() {
         String name = getString("name");
@@ -424,56 +392,6 @@ public class CarbonChatChannel extends ChatChannel {
         }
 
         return null;
-    }
-
-    @Override
-    public String getSwitchMessage() {
-        return getString("switch-message");
-    }
-
-    @Override
-    public String getSwitchOtherMessage() {
-        return getString("switch-other-message");
-    }
-
-    @Override
-    public String getSwitchFailureMessage() {
-        return getString("switch-failure-message");
-    }
-
-    @Override
-    public String getToggleOffMessage() {
-        return getString("toggle-off-message");
-    }
-
-    @Override
-    public String getToggleOnMessage() {
-        return getString("toggle-on-message");
-    }
-
-    @Override
-    public String getToggleOtherOnMessage() {
-        return getString("toggle-other-on");
-    }
-
-    @Override
-    public String getToggleOtherOffMessage() {
-        return getString("toggle-other-off");
-    }
-
-    @Override
-    public String getCannotUseMessage() {
-        return getString("cannot-use-channel");
-    }
-
-    @Override
-    public Boolean shouldForwardFormatting() {
-        return getBoolean("forward-format");
-    }
-
-    @Override
-    public Boolean primaryGroupOnly() {
-        return getBoolean("primary-group-only");
     }
 
     @Override
@@ -510,62 +428,6 @@ public class CarbonChatChannel extends ChatChannel {
         return section.get(key);
     }
 
-    private String getString(String key) {
-        if (config != null && config.contains(key)) {
-            return config.getString(key);
-        }
-
-        ConfigurationSection defaultSection = carbonChat.getConfig().getConfigurationSection("default");
-
-        if (defaultSection != null && defaultSection.contains(key)) {
-            return defaultSection.getString(key);
-        }
-
-        return null;
-    }
-
-    private List<String> getStringList(String key) {
-        if (config != null && config.contains(key)) {
-            return config.getStringList(key);
-        }
-
-        ConfigurationSection defaultSection = carbonChat.getConfig().getConfigurationSection("default");
-
-        if (defaultSection != null && defaultSection.contains(key)) {
-            return defaultSection.getStringList(key);
-        }
-
-        return Collections.emptyList();
-    }
-
-    private boolean getBoolean(String key) {
-        if (config != null && config.contains(key)) {
-            return config.getBoolean(key);
-        }
-
-        ConfigurationSection defaultSection = carbonChat.getConfig().getConfigurationSection("default");
-
-        if (defaultSection != null && defaultSection.contains(key)) {
-            return defaultSection.getBoolean(key);
-        }
-
-        return false;
-    }
-
-    private double getDouble(String key) {
-        if (config != null && config.contains(key)) {
-            return config.getDouble(key);
-        }
-
-        ConfigurationSection defaultSection = carbonChat.getConfig().getConfigurationSection("default");
-
-        if (defaultSection != null && defaultSection.contains(key)) {
-            return defaultSection.getDouble(key);
-        }
-
-        return 0;
-    }
-
     @Override
     public String getKey() {
         return key;
@@ -580,10 +442,5 @@ public class CarbonChatChannel extends ChatChannel {
         }
 
         return aliases;
-    }
-
-    @Override
-    public boolean shouldCancelChatEvent() {
-        return getBoolean("cancel-message-event");
     }
 }
